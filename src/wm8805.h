@@ -20,10 +20,11 @@ public:
 		RATE_UNLOCKED = 0xFF
 	} SampleRate;
 
-	WM8805(TwoWire *wire, const uint8_t addr = WM8805_ADDRESS_DEFAULT) : TwoWireDevice(wire, addr) {};
+	WM8805(TwoWire& wire, const uint8_t addr = WM8805_ADDRESS_DEFAULT) : TwoWireDevice(wire, addr) {};
     WM8805(const uint8_t addr = WM8805_ADDRESS_DEFAULT) : TwoWireDevice(addr) {};
 
     bool begin();
+	uint8_t getRevision();
 	void powerUp();
 	void powerDown();
 	void printStatus(bool print_int = false);

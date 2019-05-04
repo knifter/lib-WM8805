@@ -34,8 +34,8 @@
 	#define PLL6_RXINSEL_MASK		0x07
 	#define PLL6_CLKOUTSRC			0x80
 	#define PLL6_CLKOUTDIS			0x10
-	#define PLL6_FILLMODE			0x20
-	#define PLL6_ALWSVALID			0x40
+	#define PLL6_FILLMODE			0x20	// 1=Write '0's if when INVALID/TRANS_ERR and they are masked (p43)
+	#define PLL6_ALWSVALID			0x40	// 
 	#define PLL6_MCLKSRC			0x80
 #define REG_PLL6_CFG				(PLL6_FILLMODE)
 #define REG_PLL6_INIT				(REG_PLL6_CFG)
@@ -53,7 +53,7 @@
 	#define INT_UPD_CPY_N			0x20
 	#define INT_UPD_DEEMPH			0x40
 	#define INT_UPD_REC_FREQ		0x80
-#define REG_INTMASK_INIT			(INT_INVALID)
+#define REG_INTMASK_INIT			(INT_INVALID | INT_TRANS_ERR)
 
 #define REG_SPDSTAT			0x0C
 	#define SPDSTAT_AUDIO_N			0x01
@@ -110,7 +110,7 @@
 	#define GPOFUNC_CPY_N			0x0B
 	#define GPOFUNC_ZEROFLAG		0x0C
 	#define GPOFUNC_NONE			0x0F
-#define REG_GPO01_INIT				(GPOFUNC_UNLOCK | GPOFUNC_NONE << 4)	// GPO1=UNLOCK
+#define REG_GPO01_INIT				(GPOFUNC_NONE | GPOFUNC_ZEROFLAG << 4)	// GPO1=ZERO
 #define REG_GPO23_INIT				(GPOFUNC_INT_N | GPOFUNC_NONE << 4)	    // GPO2=INT_N
 #define REG_GPO45_INIT				(GPOFUNC_NONE | GPOFUNC_NONE << 4) 
 #define REG_GPO67_INIT				(GPOFUNC_NONE | GPOFUNC_NONE << 4) 
@@ -156,46 +156,51 @@ bool WM8805::begin()
     // 	return false;
 	TwoWireDevice::begin();
 
- 	write8(0x00, 0x00); // reset
+ 	writereg8(0x00, 0x00); // reset
 
 	// Check that Wim is there
-	uint8_t devid1 = read8(REG_DEVID1);
-	uint8_t devid2 = read8(REG_DEVID2);
+	uint8_t devid1 = readreg8(REG_DEVID1);
+	uint8_t devid2 = readreg8(REG_DEVID2);
 	if(devid1 != 0x05 || devid2 != 0x88)
 	{
 		DBG("WM8805 Device not found or wrong response: 0x");
 		Serial.println((uint16_t) devid1 << 8 | devid2, HEX);
 		return false;
 	}
-	uint8_t rev = read8(REG_DEVID3);
+	uint8_t rev = readreg8(REG_DEVID3);
 	DBG("WN8805 Revision ");
 	DBGLN(rev);
 
     set_pll(); // PLL1-4
-    write8(REG_PLL5, REG_PLL5_INIT);
-    write8(REG_PLL6, REG_PLL6_INIT);
-	write8(REG_SPDMODE, REG_SPDMODE_INIT);
-    write8(REG_INTMASK, REG_INTMASK_INIT);
-    write8(REG_AIFTX, REG_AIFTX_INIT);
-    write8(REG_AIFRX, REG_AIFRX_INIT);
-    write8(REG_GPO01, REG_GPO01_INIT);
-    write8(REG_GPO23, REG_GPO23_INIT);
-    write8(REG_GPO45, REG_GPO45_INIT);
-    write8(REG_GPO67, REG_GPO67_INIT);
-    write8(REG_SPDRX1, REG_SPDRX1_INIT);
-    write8(REG_PWRDN, REG_PWRDN_POWERUP);
+    writereg8(REG_PLL5, REG_PLL5_INIT);
+    writereg8(REG_PLL6, REG_PLL6_INIT);
+	writereg8(REG_SPDMODE, REG_SPDMODE_INIT);
+    writereg8(REG_INTMASK, REG_INTMASK_INIT);
+    writereg8(REG_AIFTX, REG_AIFTX_INIT);
+    writereg8(REG_AIFRX, REG_AIFRX_INIT);
+    writereg8(REG_GPO01, REG_GPO01_INIT);
+    writereg8(REG_GPO23, REG_GPO23_INIT);
+    writereg8(REG_GPO45, REG_GPO45_INIT);
+    writereg8(REG_GPO67, REG_GPO67_INIT);
+    writereg8(REG_SPDRX1, REG_SPDRX1_INIT);
+    writereg8(REG_PWRDN, REG_PWRDN_POWERUP);
 
     return true;
 }
 
+uint8_t WM8805::getRevision()
+{
+	return readreg8(REG_DEVID3);
+}
+
 void WM8805::powerDown()
 {
-	write8(REG_PWRDN, REG_PWRDN_POWERDOWN);
+	writereg8(REG_PWRDN, REG_PWRDN_POWERDOWN);
 }
 
 void WM8805::powerUp()
 {
-	write8(REG_PWRDN, REG_PWRDN_POWERUP);
+	writereg8(REG_PWRDN, REG_PWRDN_POWERUP);
 }
 
 void WM8805::autoSelectInput()
@@ -212,14 +217,14 @@ void WM8805::autoSelectInput()
 bool WM8805::selectInput(byte num)
 {
 	input = num;
-	write8(REG_PLL6, REG_PLL6_CFG | (input & PLL6_RXINSEL_MASK));
+	writereg8(REG_PLL6, REG_PLL6_CFG | (input & PLL6_RXINSEL_MASK));
 	return true;
 }
 
 bool WM8805::handleInterrupt()
 {
-	_intstat = read8(REG_INTSTAT);
-	_spdstat = read8(REG_SPDSTAT);
+	_intstat = readreg8(REG_INTSTAT);
+	_spdstat = readreg8(REG_SPDSTAT);
 
 	// nothing to do if there were no interrupts
 	if(!_intstat)
@@ -290,7 +295,7 @@ bool WM8805::handleInterrupt()
 
 void WM8805::set_enable192K(bool enabled)
 {
-	write8(REG_SPDRX1, REG_SPDRX1_CFG | enabled ? SPDRX1_SPD_192_EN : 0);
+	writereg8(REG_SPDRX1, REG_SPDRX1_CFG | enabled ? SPDRX1_SPD_192_EN : 0);
 }
 
 void WM8805::set_pll(byte pll_n, unsigned long pll_k)
@@ -301,12 +306,12 @@ void WM8805::set_pll(byte pll_n, unsigned long pll_k)
 	Serial.print(pll_k, HEX);
 	Serial.println(")");
 
-    // write8(REG_PWRDN, 0x07);
-	write8(REG_PLL1, (pll_k >> 0) & 0x0000FF); // K[7:0]
-	write8(REG_PLL2, (pll_k >> 8) & 0x0000FF); // K[15:8]
-	write8(REG_PLL3, (pll_k >> 16) & 0x0000FF); // K[24:16]
-	write8(REG_PLL4, REG_PLL4_CFG | (pll_n & PLL4_N_MASK));
-    // write8(REG_PWRDN, 0x04);
+    // writereg8(REG_PWRDN, 0x07);
+	writereg8(REG_PLL1, (pll_k >> 0) & 0x0000FF); // K[7:0]
+	writereg8(REG_PLL2, (pll_k >> 8) & 0x0000FF); // K[15:8]
+	writereg8(REG_PLL3, (pll_k >> 16) & 0x0000FF); // K[24:16]
+	writereg8(REG_PLL4, REG_PLL4_CFG | (pll_n & PLL4_N_MASK));
+    // writereg8(REG_PWRDN, 0x04);
 }
 
 bool WM8805::isLocked()
@@ -338,7 +343,7 @@ void WM8805::printStatus(bool print_int /* = false */)
     if(print_int)
     {
 	    DBG(" INT: ");
-	    byte in = read8(REG_INTSTAT);
+	    byte in = readreg8(REG_INTSTAT);
 	    if(in & INT_UPD_REC_FREQ)
 	        DBG("UPD_REC_FREQ ");
 	    if(in & INT_UPD_DEEMPH)
@@ -358,7 +363,7 @@ void WM8805::printStatus(bool print_int /* = false */)
 	};
 	
     DBG(" SPDSTAT: ");
-    byte st = read8(REG_SPDSTAT);
+    byte st = readreg8(REG_SPDSTAT);
     if(st & SPDSTAT_UNLOCK) {
 		DBG("UNLOCK ");
 	}else{
@@ -388,7 +393,7 @@ byte WM8805::getChanSampleRate()
 	if(!isLocked())
 		return 0;
 
-	byte rx = read8(REG_RXCHAN4);
+	byte rx = readreg8(REG_RXCHAN4);
     switch(rx & 0x0F)
     {
         case 0:
