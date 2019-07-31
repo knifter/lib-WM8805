@@ -250,15 +250,14 @@ bool WM8805::handleInterrupt()
 	    // return true;
 	};
 
-	// FIXME, click!
-	static int cnt = 0;
-	cnt++;
-	if(cnt == 2)
-	{
-		delay(300);
-		DBG("*WAIT*\n");
-	}else
-		DBG("*\n");
+	// // FIXME, click!
+	// static int cnt = 0;
+	// cnt++;
+	// if(cnt == 2)
+	// {
+	// 	delay(300);
+	// 	DBG("*WAIT*\n");
+	// };
 
 	// Got locked/unlocked?
 	if(_intstat & INT_UPD_UNLOCK)
@@ -266,9 +265,9 @@ bool WM8805::handleInterrupt()
 		DBG("INT:UPD_UNLOCK")
 		if(!isLocked())
 		{
-			DBG("(unlocked)\n");
+			DBG("=(unlocked)\n");
 		}else{
-			DBG("(locked)\n");
+			DBG("=(locked)\n");
 		}
 	};
 
@@ -287,7 +286,7 @@ bool WM8805::handleInterrupt()
     if(_intstat & INT_UPD_NON_AUDIO)
 	{
         DBG("INT:UPD_NON_AUDIO\n");
-		return false;
+		// return false;
 	};
 
 	return true;
