@@ -163,13 +163,13 @@ bool WM8805::begin()
 	uint8_t devid2 = readreg8(REG_DEVID2);
 	if(devid1 != 0x05 || devid2 != 0x88)
 	{
-		DBG("WM8805 Device not found or wrong response: 0x");
+		// DBG("WM8805 Device not found or wrong response: 0x");
 		Serial.println((uint16_t) devid1 << 8 | devid2, HEX);
 		return false;
 	}
 	uint8_t rev = readreg8(REG_DEVID3);
-	DBG("WN8805 Revision ");
-	DBGLN(rev);
+	// DBG("WN8805 Revision ");
+	// DBGLN(rev);
 
     set_pll(); // PLL1-4
     writereg8(REG_PLL5, REG_PLL5_INIT);
@@ -233,7 +233,7 @@ bool WM8805::handleInterrupt()
 	// Samplerate changed?
 	if(_intstat & INT_UPD_REC_FREQ)
 	{
-		DBG("INT:UPD_FREQ\n");
+		// DBG("INT:UPD_FREQ\n");
 		switch(_spdstat & SPDSTAT_FREQ_MASK)
    		{
         	case RATE_192K: // Mode 1: 192K R = 8.192
@@ -262,15 +262,16 @@ bool WM8805::handleInterrupt()
 	// Got locked/unlocked?
 	if(_intstat & INT_UPD_UNLOCK)
 	{
-		DBG("INT:UPD_UNLOCK")
+		// DBG("INT:UPD_UNLOCK")
 		if(!isLocked())
 		{
-			DBG("=(unlocked)\n");
+			// DBG("=(unlocked)\n");
 		}else{
-			DBG("=(locked)\n");
+			// DBG("=(locked)\n");
 		}
 	};
 
+#ifdef WM8805_DEBUG
 	// masked
 	if(_intstat & INT_INVALID)
 		DBG("INT:INVALID\n");
@@ -288,6 +289,7 @@ bool WM8805::handleInterrupt()
         DBG("INT:UPD_NON_AUDIO\n");
 		// return false;
 	};
+#endif
 
 	return true;
 }
@@ -299,11 +301,13 @@ void WM8805::set_enable192K(bool enabled)
 
 void WM8805::set_pll(byte pll_n, unsigned long pll_k)
 {
+#ifdef WM8805_DEBUG
 	Serial.print("set_pll(");
 	Serial.print(pll_n, HEX);
 	Serial.print(", ");
 	Serial.print(pll_k, HEX);
 	Serial.println(")");
+#endif
 
     // writereg8(REG_PWRDN, 0x07);
 	writereg8(REG_PLL1, (pll_k >> 0) & 0x0000FF); // K[7:0]
