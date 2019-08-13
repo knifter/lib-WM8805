@@ -167,7 +167,7 @@ bool WM8805::begin()
 		Serial.println((uint16_t) devid1 << 8 | devid2, HEX);
 		return false;
 	}
-	uint8_t rev = readreg8(REG_DEVID3);
+	// uint8_t rev = readreg8(REG_DEVID3);
 	// DBG("WN8805 Revision ");
 	// DBGLN(rev);
 
@@ -183,7 +183,7 @@ bool WM8805::begin()
     writereg8(REG_GPO45, REG_GPO45_INIT);
     writereg8(REG_GPO67, REG_GPO67_INIT);
     writereg8(REG_SPDRX1, REG_SPDRX1_INIT);
-    writereg8(REG_PWRDN, REG_PWRDN_POWERUP);
+    writereg8(REG_PWRDN, REG_PWRDN_POWERDOWN);
 
     return true;
 }
