@@ -2,6 +2,7 @@
 #define WM8805_H
 
 #include <Arduino.h>
+#include <stdint.h>
 
 #include <TwoWireDevice.h>
 
@@ -11,14 +12,14 @@
 class WM8805: public TwoWireDevice
 {
 public:
-	typedef enum : byte
+	typedef enum : uint8_t
 	{
 		RATE_192K = 0x00,
 		RATE_96K  = 0x10,
 		RATE_48K  = 0x20,
 		RATE_32K  = 0x30,
 		RATE_UNLOCKED = 0xFF
-	} SampleRate;
+	} samplerate_t;
 
 	WM8805(TwoWire& wire, const uint8_t addr = WM8805_ADDRESS_DEFAULT) : TwoWireDevice(wire, addr) {};
     WM8805(const uint8_t addr = WM8805_ADDRESS_DEFAULT) : TwoWireDevice(addr) {};
@@ -33,26 +34,23 @@ public:
 	bool isLocked();
 	bool isAudio();
 	bool isDeemph();
-	byte getSampleRate();
-	byte getChanSampleRate();
+	samplerate_t getSampleRate();
+	uint8_t getChanSampleRateKHz();
 	
 	// actions
 	bool handleInterrupt();
 
-	bool selectInput(byte num);
+	bool selectInput(uint8_t num);
 	void autoSelectInput();
 
-	byte input;
-	// bool configure_pll();
+	uint8_t input;
 
-	// bool isValid = false;
-	// bool isLocked = false;
 private:
-	void set_pll(byte pll_n = 7, unsigned long pll_k = 0x36FD21);
+	void set_pll(uint8_t pll_n = 7, unsigned long pll_k = 0x36FD21);
 	void set_enable192K(bool enabled);
 
-	byte _spdstat = 0;
-	byte _intstat = 0;
+	uint8_t _spdstat = 0;
+	uint8_t _intstat = 0;
 
 };
 

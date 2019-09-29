@@ -203,18 +203,7 @@ void WM8805::powerUp()
 	writereg8(REG_PWRDN, REG_PWRDN_POWERUP);
 }
 
-void WM8805::autoSelectInput()
-{
-	for(byte rx = 0; rx < 8; rx++)
-	{
-		// DBG("Testing input ");
-		// DBGLN(rx, DEC);
-		if(selectInput(rx))
-			return;
-	};
-}
-
-bool WM8805::selectInput(byte num)
+bool WM8805::selectInput(uint8_t num)
 {
 	input = num;
 	writereg8(REG_PLL6, REG_PLL6_CFG | (input & PLL6_RXINSEL_MASK));
@@ -299,7 +288,7 @@ void WM8805::set_enable192K(bool enabled)
 	writereg8(REG_SPDRX1, REG_SPDRX1_CFG | enabled ? SPDRX1_SPD_192_EN : 0);
 }
 
-void WM8805::set_pll(byte pll_n, unsigned long pll_k)
+void WM8805::set_pll(uint8_t pll_n, unsigned long pll_k)
 {
 #ifdef WM8805_DEBUG
 	Serial.print("set_pll(");
@@ -332,11 +321,11 @@ bool WM8805::isDeemph()
 	return !(_spdstat & SPDSTAT_DEEMPH);
 }
 
-byte WM8805::getSampleRate()
+WM8805::samplerate_t WM8805::getSampleRate()
 {
 	if(_spdstat & SPDSTAT_UNLOCK)
 		return RATE_UNLOCKED;
-	return (_spdstat & SPDSTAT_FREQ_MASK);
+	return (samplerate_t)(_spdstat & SPDSTAT_FREQ_MASK);
 }
 
 void WM8805::printStatus(bool print_int /* = false */)
@@ -346,7 +335,7 @@ void WM8805::printStatus(bool print_int /* = false */)
     if(print_int)
     {
 	    DBG(" INT: ");
-	    byte in = readreg8(REG_INTSTAT);
+	    uint8_t in = readreg8(REG_INTSTAT);
 	    if(in & INT_UPD_REC_FREQ)
 	        DBG("UPD_REC_FREQ ");
 	    if(in & INT_UPD_DEEMPH)
@@ -366,7 +355,7 @@ void WM8805::printStatus(bool print_int /* = false */)
 	};
 	
     DBG(" SPDSTAT: ");
-    byte st = readreg8(REG_SPDSTAT);
+    uint8_t st = readreg8(REG_SPDSTAT);
     if(st & SPDSTAT_UNLOCK) {
 		DBG("UNLOCK ");
 	}else{
@@ -391,12 +380,13 @@ void WM8805::printStatus(bool print_int /* = false */)
     DBGLN("");
 }
 
-byte WM8805::getChanSampleRate()
+// Returns the samplerate specified in the channel (stream)
+uint8_t WM8805::getChanSampleRateKHz()
 {
 	if(!isLocked())
 		return 0;
 
-	byte rx = readreg8(REG_RXCHAN4);
+	uint8_t rx = readreg8(REG_RXCHAN4);
     switch(rx & 0x0F)
     {
         case 0:
